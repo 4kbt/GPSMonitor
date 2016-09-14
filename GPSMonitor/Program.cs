@@ -3,38 +3,62 @@ using System.IO.Ports;
 
 namespace GPSMonitor
 {
-	public class SerialPortTest
+	public class GPSMonitor 
 	{
+		//Member variables
+		public double GPSTime;
+		public UInt32 GPSDate;
+		public UInt16 satellitesInView;
+		public UInt16 fixStatus; 
+		private SerialPort mySerial;
 
 		public static void Main (string[] args)
 		{
-			SerialPortTest myTest = new SerialPortTest ();
-			myTest.Test ();
+			GPSMonitor GPS = new GPSMonitor ("/dev/ttyACM0");
+			GPS.AcquireData ();
 		}
 
-		private SerialPort mySerial;
-		// Constructor
-		public SerialPortTest ()
-		{
-		}
+		//Constructor
+		public GPSMonitor( string portName ){
 
-		public void Test ()
-		{
+			//Close serial port if it's presently open
 			if (mySerial != null)
-			if (mySerial.IsOpen)
-				mySerial.Close ();
+				if (mySerial.IsOpen)
+					mySerial.Close ();
 
 			//Open and configure the serial port
 			Console.WriteLine("Initializing!");
-			mySerial = new SerialPort ("/dev/ttyACM0", 9600);
+			mySerial = new SerialPort (portName, 9600);
 			mySerial.Open ();
 			mySerial.ReadTimeout = 4000;
 			Console.WriteLine("Initialized!");
+		}
 
+		public void AcquireData ()
+		{
+
+
+			string RawString; 
 			//Loop forever
 			while (true) {
-				Console.WriteLine (ReadData ());
+				RawString = ReadData ();
+				Console.WriteLine (RawString);
+				ParseString (RawString);
 			}
+		}
+
+		//Function to parse the NMEA sentences
+		private void ParseString (string s){
+			string[] Words = s.Split (',');
+			//string NMEAName = s.Substring (1, 5);
+			switch (Words[0]) {
+			case "$GPGSV":
+				Console.WriteLine ("Number of satellites: " + Words [3]);
+				break;
+			default:
+				break;
+			}
+
 		}
 
 		public string ReadData ()
