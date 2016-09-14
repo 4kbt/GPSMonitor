@@ -33,7 +33,6 @@ namespace GPSMonitor
 
 			//Loop forever
 			while (true) {
-
 				Console.WriteLine (ReadData ());
 			}
 		}
