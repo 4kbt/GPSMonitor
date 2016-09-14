@@ -17,7 +17,7 @@ namespace GPSMonitor
 		public UInt64 SystemFixTime; //system time at the instant that GPSTime was set.
 		public UInt32 GPSDate; //date as presented by the GPS (140916 is September 14, 2016);
 		public UInt16 satellitesInView; //number of satellites most recently in view
-		public UInt16 fixStatus; //NMEA fix status (0 = no fix, 1 = fix)
+		public UInt16 fixStatus; //NMEA fix status (1 = no fix, 2 = 2D fix, 3 = 3D fix)
 
 		private SerialPort mySerial; //The SerialPort object connected to the GPS.
 
@@ -37,16 +37,17 @@ namespace GPSMonitor
 			Console.WriteLine("Initialized!");
 		}
 
+		//main acquisition loop.
 		public void AcquireData ()
 		{
-
-
 			string RawString; 
 			//Loop forever
 			while (true) {
 				RawString = ReadData ();
-				Console.WriteLine (RawString);
+//				Console.WriteLine (RawString);
 				ParseString (RawString);
+
+
 			}
 		}
 
@@ -58,20 +59,26 @@ namespace GPSMonitor
 			//Switch on NMEA sentence-type.
 			switch (Words[0]) {
 
+			case "$GPGSA":
+				fixStatus = UInt16.Parse (Words [2]);
+				break;
+
 			case "$GPGSV": //Signal strength and satellite information
-				Console.WriteLine ("Number of satellites: " + Words [3]);
 				satellitesInView = UInt16.Parse (Words [3]);
 				break;
-			case "$GPRMC": //Position timing information
-				SystemFixTime = GetCurrentUnixTimestampMillis(); //Do this first to minimize latency
+
+			case "$GPRMC": //Position and timing information
+				SystemFixTime = GetCurrentUnixTimestampMillis (); //Do this first to minimize latency
 				GPSTime = Double.Parse (Words [1]);
 				GPSDate = UInt32.Parse (Words [9]);
+				Console.WriteLine (SystemFixTime + "\t" + GPSTime + "\t" + GPSDate + "\t" + satellitesInView + "\t" + fixStatus);
 				break;
+
 			default:
 				break;
 			}
-
 		}
+
 
 		public string ReadData ()
 		{
